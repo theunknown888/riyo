@@ -38,27 +38,17 @@ jobs:
 
       - name: Decode Keystore
         run: |
-          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > android/release.keystore
+          printf "%s" "$KEYSTORE_BASE64" | base64 --decode > android/release.keystore
         env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --no-shrink
         env:
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-
-      - name: Extract SHA-1
-        run: |
-          keytool -list -v -keystore android/release.keystore -alias ${{ secrets.RELEASE_KEY_ALIAS }} -storepass ${{ secrets.RELEASE_STORE_PASSWORD }} > key_info.txt
-          grep "SHA1:" key_info.txt | head -n 1 | cut -d ' ' -f 12 > sha1.txt
-          echo "SHA-1: $(cat sha1.txt)"
-
-      - name: Add SHA-1 to APK
-        run: |
-          zip -j build/app/outputs/flutter-apk/app-release.apk sha1.txt
-        continue-on-error: true
+          KEYSTORE_FILE: android/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Get Version from pubspec
         id: get_version
@@ -69,12 +59,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            sha1.txt
+          files: build/app/outputs/flutter-apk/app-release.apk
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
-          body: "Automated production release for RIYO BOX. SHA-1 Fingerprint included inside APK."
+          body: "Automated production release for RIYO BOX."
           draft: false
           prerelease: false
         env:
