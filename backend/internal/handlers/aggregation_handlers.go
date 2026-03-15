@@ -82,7 +82,7 @@ func GetMovieSources(c *gin.Context) {
 		return
 	}
 
-	sources := VideoExt.ExtractSources(movie.TMDbID, movie.IsTvShow, 0, 0)
+	sources := VideoExt.ExtractSources(movie.TMDbID, movie.Title, movie.IsTvShow, 0, 0)
 	subtitles := utils.GetSubtitles(movie.TMDbID, movie.IsTvShow, 0, 0)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -110,7 +110,7 @@ func GetTVSources(c *gin.Context) {
 		return
 	}
 
-	sources := VideoExt.ExtractSources(movie.TMDbID, true, season, episode)
+	sources := VideoExt.ExtractSources(movie.TMDbID, movie.Title, true, season, episode)
 	subtitles := utils.GetSubtitles(movie.TMDbID, true, season, episode)
 
 	c.JSON(http.StatusOK, gin.H{

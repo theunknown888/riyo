@@ -60,9 +60,23 @@ class HomeProvider extends ChangeNotifier {
 
     try {
       _categories = await _apiService.getHeaderCategories();
-      _sections = await _apiService.getHomeSections();
+
+      // Use new aggregation route for home data
+      final homeData = await _apiService.getHomeData();
+      _sections = [
+        {'title': 'Trending Movies', 'type': 'trending_new'},
+        {'title': 'Popular Movies', 'type': 'popular_new'},
+        {'title': 'Top Rated', 'type': 'top_rated_new'},
+        {'title': 'TV Shows', 'type': 'trending_tv_new'},
+      ];
+
       _sectionFutures.clear();
-      _featuredFuture = _apiService.getTrendingMovies(token: token, isFeatured: true);
+      _sectionFutures['Trending Movies'] = Future.value(homeData['trendingMovies']);
+      _sectionFutures['Popular Movies'] = Future.value(homeData['popularMovies']);
+      _sectionFutures['Top Rated'] = Future.value(homeData['topRatedMovies']);
+      _sectionFutures['TV Shows'] = Future.value(homeData['trendingTV']);
+
+      _featuredFuture = Future.value(homeData['trendingMovies']?.take(5).toList());
     } catch (e) {
       debugPrint('Error loading home config: $e');
     } finally {

@@ -60,14 +60,16 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     try {
-      final movies = await _apiService.getTrendingMovies(token: token);
-      var filteredMovies = movies
-          .where((movie) =>
-              movie.title.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-
+      List<Movie> filteredMovies;
       if (isOffline) {
-        filteredMovies = filteredMovies.where((m) => m.isDownloaded).toList();
+        final movies = await _apiService.getTrendingMovies(token: token);
+        filteredMovies = movies
+            .where((movie) =>
+                movie.title.toLowerCase().contains(query.toLowerCase()) &&
+                movie.isDownloaded)
+            .toList();
+      } else {
+        filteredMovies = await _apiService.search(query);
       }
 
       if (mounted) {

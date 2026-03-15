@@ -29,6 +29,8 @@ class _MovieDetailsScreenState extends rp.ConsumerState<MovieDetailsScreen> {
   bool _isInWatchlist = false;
   Future<Movie>? _movieFuture;
   Future<List<Movie>>? _recommendationsFuture;
+  List<StreamSource> _availableSources = [];
+  bool _isLoadingSources = false;
 
   @override
   void initState() {
@@ -40,7 +42,24 @@ class _MovieDetailsScreenState extends rp.ConsumerState<MovieDetailsScreen> {
         _recommendationsFuture = _apiService.getTrendingMovies(token: auth.token);
       });
       _checkWatchlistStatus();
+      _fetchSources();
     });
+  }
+
+  void _fetchSources() async {
+    setState(() => _isLoadingSources = true);
+    try {
+      final response = await _apiService.getSources(widget.movieId);
+      if (mounted) {
+        setState(() {
+          final List<dynamic> sourceData = response['sources'] ?? [];
+          _availableSources = sourceData.map((s) => StreamSource.fromJson(s)).toList();
+          _isLoadingSources = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingSources = false);
+    }
   }
 
   void _checkWatchlistStatus() async {
@@ -92,6 +111,8 @@ class _MovieDetailsScreenState extends rp.ConsumerState<MovieDetailsScreen> {
                       const SizedBox(height: 32),
                       if (movie.isTvShow) _buildSeasonSelector(movie),
                       if (movie.isTvShow) _buildEpisodeList(),
+                      const SizedBox(height: 32),
+                      _buildSourceList(),
                       const SizedBox(height: 32),
                       _buildMoreInfo(movie),
                       const SizedBox(height: 48),
@@ -532,6 +553,53 @@ class _MovieDetailsScreenState extends rp.ConsumerState<MovieDetailsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSourceList() {
+    if (_isLoadingSources) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Streaming Sources', style: AppTypography.titleLarge),
+          const SizedBox(height: 16),
+          Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
+        ],
+      );
+    }
+
+    if (_availableSources.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Streaming Sources', style: AppTypography.titleLarge),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 50,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _availableSources.length,
+            itemBuilder: (context, index) {
+              final source = _availableSources[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: ActionChip(
+                  avatar: Icon(
+                    source.type == 'embed' ? Icons.launch_rounded : Icons.play_circle_outline_rounded,
+                    size: 16,
+                  ),
+                  label: Text('${source.label} (${source.quality})'),
+                  onPressed: () {
+                    final id = widget.movieId;
+                    context.push('/movie/$id/play');
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

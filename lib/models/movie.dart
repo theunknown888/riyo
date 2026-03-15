@@ -3,12 +3,14 @@ class StreamSource {
   final String url;
   final String type;
   final String provider;
+  final String quality;
 
   StreamSource({
     required this.label,
     required this.url,
     required this.type,
     required this.provider,
+    this.quality = '720p',
   });
 
   factory StreamSource.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class StreamSource {
       url: json['url'] ?? '',
       type: json['type'] ?? 'direct',
       provider: json['provider'] ?? 'url',
+      quality: json['quality'] ?? '720p',
     );
   }
 }
